@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { departmentMap, getDepartmentTheme } from "../config/departmentMap";
+import { supabase } from "../../lib/supabase";
 
 function Login() {
   const [registerNumber, setRegisterNumber] = useState("");
@@ -18,7 +19,7 @@ function Login() {
     }
   }, []);
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     setError("");
     
     if (!registerNumber) {
@@ -31,10 +32,19 @@ function Login() {
       return;
     }
 
+    if (!password) {
+      setError("Please enter your password");
+      return;
+    }
+
+    if (password.length < 4) {
+      setError("Password must be at least 4 characters");
+      return;
+    }
+
     setLoading(true);
 
-    // Simulate network delay
-    setTimeout(() => {
+    try {
       const deptCode = registerNumber.slice(0, 2);
       const department = departmentMap[deptCode];
 
@@ -44,13 +54,38 @@ function Login() {
         return;
       }
 
+      // Check if user exists in Supabase, if not create one
+      const { data: existingUser } = await supabase
+        .from("users")
+        .select("*")
+        .eq("register_number", registerNumber)
+        .single();
+
+      if (!existingUser) {
+        // Create new user
+        const { error: insertError } = await supabase
+          .from("users")
+          .insert({
+            register_number: registerNumber,
+            department: department
+          });
+
+        if (insertError) {
+          console.error("Error creating user:", insertError);
+        }
+      }
+
       localStorage.setItem("department", department);
       localStorage.setItem("registerNumber", registerNumber);
       setTheme(getDepartmentTheme(department));
       
       setLoading(false);
       navigate("/dashboard");
-    }, 800);
+    } catch (err) {
+      console.error("Login error:", err);
+      setError("An error occurred during login");
+      setLoading(false);
+    }
   };
 
   const handleKeyPress = (e) => {
@@ -63,10 +98,35 @@ function Login() {
     ? { background: theme.gradient }
     : {};
 
+  // Ensure inputs are above the background
+  const inputStyle = {
+    ...styles.input,
+    position: 'relative',
+    zIndex: 10,
+  };
+
+  const cardStyle = {
+    ...styles.card,
+    position: 'relative',
+    zIndex: 5,
+  };
+
+  const buttonStyle = {
+    ...styles.button,
+    position: 'relative',
+    zIndex: 10,
+  };
+
+  const errorStyle = {
+    ...styles.error,
+    position: 'relative',
+    zIndex: 10,
+  };
+
   return (
     <div className="galaxy-bg" style={backgroundStyle}>
       <div style={styles.container}>
-        <div style={styles.card} className="glass-card">
+        <div style={cardStyle} className="glass-card">
           {/* College Logo Watermark */}
           <div style={styles.logoContainer}>
             <div style={styles.logo}>🎓</div>
@@ -83,7 +143,7 @@ function Login() {
                 value={registerNumber}
                 onChange={(e) => setRegisterNumber(e.target.value)}
                 onKeyPress={handleKeyPress}
-                style={styles.input}
+                style={inputStyle}
                 className="input"
                 maxLength={10}
               />
@@ -93,21 +153,21 @@ function Login() {
               <label style={styles.label}>Password</label>
               <input
                 type="password"
-                placeholder="Enter your password (optional)"
+                placeholder="Enter your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 onKeyPress={handleKeyPress}
-                style={styles.input}
+                style={inputStyle}
                 className="input"
               />
             </div>
 
-            {error && <p style={styles.error}>{error}</p>}
+            {error && <p style={errorStyle}>{error}</p>}
 
             <button 
               onClick={handleLogin} 
               disabled={loading}
-              style={loading ? {...styles.button, ...styles.buttonDisabled} : styles.button}
+              style={loading ? {...buttonStyle, ...styles.buttonDisabled} : buttonStyle}
               className="btn btn-primary"
             >
               {loading ? (
@@ -233,4 +293,3 @@ const styles = {
 };
 
 export default Login;
-

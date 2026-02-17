@@ -3,21 +3,51 @@ import { getDepartmentTheme } from "../../config/departmentMap";
 
 function ExamPanel() {
   const [theme, setTheme] = useState(null);
+  const [department, setDepartment] = useState("");
 
   useEffect(() => {
     const dept = localStorage.getItem("department");
     if (dept) {
+      setDepartment(dept);
       setTheme(getDepartmentTheme(dept));
     }
   }, []);
 
-  // Sample upcoming exams data
-  const exams = [
-    { id: 1, subject: "Data Structures", date: "2026-03-15", daysLeft: 15 },
-    { id: 2, subject: "Database Management", date: "2026-03-20", daysLeft: 20 },
-    { id: 3, subject: "Computer Networks", date: "2026-03-25", daysLeft: 25 },
-    { id: 4, subject: "Operating Systems", date: "2026-04-01", daysLeft: 32 },
-  ];
+  // Department-specific upcoming exams
+  const departmentExams = {
+    "Computer Science": [
+      { id: 1, subject: "Data Structures", date: "2026-03-15", daysLeft: 15 },
+      { id: 2, subject: "Database Management", date: "2026-03-20", daysLeft: 20 },
+      { id: 3, subject: "Computer Networks", date: "2026-03-25", daysLeft: 25 },
+      { id: 4, subject: "Operating Systems", date: "2026-04-01", daysLeft: 32 },
+    ],
+    "Biology": [
+      { id: 1, subject: "Biochemistry", date: "2026-03-15", daysLeft: 15 },
+      { id: 2, subject: "Microbiology", date: "2026-03-20", daysLeft: 20 },
+      { id: 3, subject: "Cell Biology", date: "2026-03-25", daysLeft: 25 },
+      { id: 4, subject: "Genetics", date: "2026-04-01", daysLeft: 32 },
+    ],
+    "Commerce": [
+      { id: 1, subject: "Corporate Accounting", date: "2026-03-15", daysLeft: 15 },
+      { id: 2, subject: "Business Law", date: "2026-03-20", daysLeft: 20 },
+      { id: 3, subject: "Cost Accounting", date: "2026-03-25", daysLeft: 25 },
+      { id: 4, subject: "Taxation", date: "2026-04-01", daysLeft: 32 },
+    ],
+    "Business": [
+      { id: 1, subject: "Marketing Management", date: "2026-03-15", daysLeft: 15 },
+      { id: 2, subject: "Human Resource Management", date: "2026-03-20", daysLeft: 20 },
+      { id: 3, subject: "Organizational Behavior", date: "2026-03-25", daysLeft: 25 },
+      { id: 4, subject: "Business Statistics", date: "2026-04-01", daysLeft: 32 },
+    ],
+    "Psychology": [
+      { id: 1, subject: "Cognitive Psychology", date: "2026-03-15", daysLeft: 15 },
+      { id: 2, subject: "Abnormal Psychology", date: "2026-03-20", daysLeft: 20 },
+      { id: 3, subject: "Personality Theory", date: "2026-03-25", daysLeft: 25 },
+      { id: 4, subject: "Statistics for Psychology", date: "2026-04-01", daysLeft: 32 },
+    ],
+  };
+
+  const exams = department ? (departmentExams[department] || departmentExams["Computer Science"]) : departmentExams["Computer Science"];
 
   const panelStyle = {
     width: "260px",
