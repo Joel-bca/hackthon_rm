@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { getDepartmentTheme } from "../../config/departmentMap";
+import { FaHome, FaEdit, FaBook, FaStar, FaSearch } from "react-icons/fa";
 
 function Sidebar({ active, setActive }) {
   const [theme, setTheme] = useState(null);
@@ -12,11 +13,11 @@ function Sidebar({ active, setActive }) {
   }, []);
 
   const items = [
-    { id: "dashboard", label: "Dashboard", icon: "🏠" },
-    { id: "questionbank", label: "Question Bank", icon: "📝" },
-    { id: "notes", label: "Student Notes", icon: "📚" },
-    { id: "toprated", label: "Top Rated Resources", icon: "⭐" },
-    { id: "search", label: "Search", icon: "🔍" }
+    { id: "dashboard", label: "Dashboard", icon: <FaHome /> },
+    { id: "questionbank", label: "Question Bank", icon: <FaEdit /> },
+    { id: "notes", label: "Student Notes", icon: <FaBook /> },
+    { id: "toprated", label: "Top Rated Resources", icon: <FaStar /> },
+    { id: "search", label: "Search", icon: <FaSearch /> }
   ];
 
   const sidebarStyle = {
@@ -90,6 +91,9 @@ const styles = {
     fontSize: "18px",
     width: "24px",
     textAlign: "center",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
   },
   label: {
     fontSize: "14px",

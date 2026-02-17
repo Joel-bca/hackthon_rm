@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getDepartmentTheme } from "../../config/departmentMap";
+import { FaUniversity, FaBookOpen, FaUser, FaSignOutAlt } from "react-icons/fa";
 
 function Navbar() {
   const [department, setDepartment] = useState("");
@@ -41,6 +42,9 @@ function Navbar() {
 
   const logoIconStyle = {
     fontSize: "32px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
   };
 
   const logoTextStyle = {
@@ -58,6 +62,9 @@ function Navbar() {
     fontSize: "13px",
     fontWeight: "500",
     boxShadow: `0 2px 10px ${theme?.highlight || "#4a5fff"}40`,
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
   };
 
   const rightSectionStyle = {
@@ -90,17 +97,20 @@ function Navbar() {
     fontWeight: "500",
     cursor: "pointer",
     transition: "all 0.3s ease",
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
   };
 
   return (
     <nav style={navbarStyle}>
       <div style={logoStyle}>
-        <span style={logoIconStyle}>🎓</span>
+        <span style={logoIconStyle}><FaUniversity /></span>
         <h2 style={logoTextStyle}>Academic Hub</h2>
       </div>
 
       <div style={deptBadgeStyle}>
-        📚 {department}
+        <FaBookOpen /> {department}
       </div>
 
       <div style={rightSectionStyle}>
@@ -108,7 +118,7 @@ function Navbar() {
           style={profileIconStyle}
           title="Profile"
         >
-          👤
+          <FaUser />
         </div>
         
         <button 
@@ -123,7 +133,7 @@ function Navbar() {
             e.target.style.color = theme?.text || "#1a1a4a";
           }}
         >
-          🚪 Logout
+          <FaSignOutAlt /> Logout
         </button>
       </div>
     </nav>

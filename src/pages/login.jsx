@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { departmentMap, getDepartmentTheme } from "../config/departmentMap";
 import { supabase } from "../../lib/supabase";
+import { FaGraduationCap, FaLightbulb } from "react-icons/fa";
 
 function Login() {
   const [registerNumber, setRegisterNumber] = useState("");
@@ -129,7 +130,7 @@ function Login() {
         <div style={cardStyle} className="glass-card">
           {/* College Logo Watermark */}
           <div style={styles.logoContainer}>
-            <div style={styles.logo}>🎓</div>
+            <div style={styles.logo}><FaGraduationCap /></div>
             <h1 style={styles.title}>Academic Hub</h1>
             <p style={styles.subtitle}>Department-Adaptive Learning Platform</p>
           </div>
@@ -180,7 +181,7 @@ function Login() {
 
           <div style={styles.footer}>
             <p style={styles.hint}>
-              💡 Hint: Use first two digits to detect department<br/>
+              <FaLightbulb /> Hint: Use first two digits to detect department<br/>
               01 → Biology | 02 → Computer Science | 03 → Commerce<br/>
               04 → Business | 05 → Psychology
             </p>

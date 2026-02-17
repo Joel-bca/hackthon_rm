@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import AIExamAssistant from "./AIExamAssistant";
 import { getDepartmentTheme } from "../../config/departmentMap";
+import { FaClipboardList, FaStar, FaDownload, FaRobot, FaEdit } from "react-icons/fa";
 
 function QuestionBank(props) {
   const propTheme = props.theme;

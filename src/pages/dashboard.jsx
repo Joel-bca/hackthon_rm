@@ -5,6 +5,7 @@ import ExamPanel from "../components/components/ExamPanel";
 import QuestionBank from "../components/components/QuestionBank";
 import StudentNotes from "../components/components/StudentNotes";
 import { getDepartmentTheme } from "../config/departmentMap";
+import { FaBook, FaFileAlt, FaRobot, FaStar, FaDownload, FaFire, FaSearch, FaComments } from "react-icons/fa";
 
 function Dashboard() {
   const [activeSection, setActiveSection] = useState("dashboard");
@@ -24,25 +25,25 @@ function Dashboard() {
       id: 1, 
       title: "Welcome to Academic Hub", 
       subtitle: "Your personalized learning journey starts here",
-      emoji: "📚"
+      icon: <FaBook />
     },
     { 
       id: 2, 
       title: "Question Bank", 
       subtitle: "Access past year question papers",
-      emoji: "📝"
+      icon: <FaFileAlt />
     },
     { 
       id: 3, 
       title: "Student Notes", 
       subtitle: "Download and share study materials",
-      emoji: "📖"
+      icon: <FaDownload />
     },
     { 
       id: 4, 
       title: "AI Exam Assistant", 
       subtitle: "Get AI-powered exam preparation",
-      emoji: "🤖"
+      icon: <FaRobot />
     },
   ];
 
@@ -74,7 +75,7 @@ function Dashboard() {
     <div style={styles.dashboardContent}>
       {/* Motivational Quote */}
       <div style={styles.quoteCard} className="glass-card">
-        <div style={styles.quoteIcon}>💭</div>
+        <div style={styles.quoteIcon}><FaComments /></div>
         <p style={styles.quoteText}>
           "{quotes[Math.floor(Math.random() * quotes.length)]}"
         </p>
@@ -90,7 +91,7 @@ function Dashboard() {
               style={styles.slide}
             >
               <div style={styles.slideContent}>
-                <span style={styles.slideEmoji}>{slide.emoji}</span>
+                <span style={styles.slideIcon}>{slide.icon}</span>
                 <h2 style={styles.slideTitle}>{slide.title}</h2>
                 <p style={styles.slideSubtitle}>{slide.subtitle}</p>
               </div>
@@ -119,21 +120,21 @@ function Dashboard() {
       {/* Quick Stats */}
       <div style={styles.statsContainer}>
         <div style={styles.statCard} className="glass-card">
-          <span style={styles.statIcon}>📚</span>
+          <span style={styles.statIcon}><FaBook /></span>
           <div>
             <h3 style={styles.statNumber}>150+</h3>
             <p style={styles.statLabel}>Resources</p>
           </div>
         </div>
         <div style={styles.statCard} className="glass-card">
-          <span style={styles.statIcon}>📝</span>
+          <span style={styles.statIcon}><FaFileAlt /></span>
           <div>
             <h3 style={styles.statNumber}>50+</h3>
             <p style={styles.statLabel}>Question Papers</p>
           </div>
         </div>
         <div style={styles.statCard} className="glass-card">
-          <span style={styles.statIcon}>⭐</span>
+          <span style={styles.statIcon}><FaStar /></span>
           <div>
             <h3 style={styles.statNumber}>4.7</h3>
             <p style={styles.statLabel}>Avg Rating</p>
@@ -143,7 +144,7 @@ function Dashboard() {
 
       {/* Top Rated Resources Preview */}
       <div style={styles.topRatedSection}>
-        <h3 style={styles.sectionTitle}>🔥 Top Rated Resources</h3>
+        <h3 style={styles.sectionTitle}><FaFire /> Top Rated Resources</h3>
         <div style={styles.topRatedGrid}>
           {topResources.map((resource) => (
             <div 
@@ -153,8 +154,8 @@ function Dashboard() {
             >
               <h4 style={styles.resourceTitle}>{resource.title}</h4>
               <div style={styles.resourceMeta}>
-                <span>⭐ {resource.rating}</span>
-                <span>⬇ {resource.downloads}</span>
+                <span><FaStar /> {resource.rating}</span>
+                <span><FaDownload /> {resource.downloads}</span>
               </div>
             </div>
           ))}
@@ -269,10 +270,11 @@ const styles = {
     textAlign: "center",
     padding: "20px",
   },
-  slideEmoji: {
+  slideIcon: {
     fontSize: "50px",
     display: "block",
     marginBottom: "15px",
+    color: "#4a5fff",
   },
   slideTitle: {
     fontSize: "28px",

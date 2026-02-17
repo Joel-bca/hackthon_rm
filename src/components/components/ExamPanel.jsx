@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { getDepartmentTheme } from "../../config/departmentMap";
+import { FaCalendar, FaClock, FaTrophy } from "react-icons/fa";
 
 function ExamPanel() {
   const [theme, setTheme] = useState(null);
@@ -70,6 +71,9 @@ function ExamPanel() {
 
   const headerIconStyle = {
     fontSize: "24px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
   };
 
   const headerTextStyle = {
@@ -125,7 +129,7 @@ function ExamPanel() {
   return (
     <div style={panelStyle}>
       <div style={headerStyle}>
-        <span style={headerIconStyle}>📅</span>
+        <span style={headerIconStyle}><FaCalendar /></span>
         <h3 style={headerTextStyle}>Upcoming Exams</h3>
       </div>
 
@@ -145,14 +149,14 @@ function ExamPanel() {
           }}
         >
           <div style={subjectStyle}>{exam.subject}</div>
-          <div style={dateStyle}>📆 {exam.date}</div>
+          <div style={dateStyle}><FaCalendar /> {exam.date}</div>
           <div style={{
             ...countdownBadgeStyle,
             background: `${getCountdownColor(exam.daysLeft)}15`,
             borderColor: `${getCountdownColor(exam.daysLeft)}30`,
             color: getCountdownColor(exam.daysLeft),
           }}>
-            ⏰ {exam.daysLeft} days left
+            <FaClock /> {exam.daysLeft} days left
           </div>
         </div>
       ))}
@@ -170,7 +174,7 @@ function ExamPanel() {
           margin: 0,
           fontWeight: "500",
         }}>
-          💪 Stay focused! You've got this!
+          <FaTrophy /> Stay focused! You've got this!
         </p>
       </div>
     </div>

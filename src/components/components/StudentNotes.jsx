@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { getDepartmentTheme } from "../../config/departmentMap";
 import { supabase } from "../../../lib/supabase";
+import { FaFilePdf, FaUpload, FaEye, FaTrash, FaRobot, FaTimes, FaSpinner, FaBook, FaCalendar, FaChevronLeft } from "react-icons/fa";
 
 function StudentNotes({ theme: propTheme }) {
   const [theme, setTheme] = useState(null);
@@ -13,6 +14,9 @@ function StudentNotes({ theme: propTheme }) {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadedPdfs, setUploadedPdfs] = useState([]);
+  const [selectedPdf, setSelectedPdf] = useState(null);
+  const [aiSummary, setAiSummary] = useState(null);
+  const [loadingSummary, setLoadingSummary] = useState(false);
 
   useEffect(() => {
     if (!propTheme && department) {
@@ -27,20 +31,18 @@ function StudentNotes({ theme: propTheme }) {
   useEffect(() => {
     const fetchUploadedPdfs = async () => {
       const { data, error } = await supabase
-        .from("student_uploads")
+        .from("resources")
         .select("*")
-        .eq("register_number", registerNumber)
-        .order("created_at", { ascending: false });
+        .eq("type", "student_note")
+        .order("upload_date", { ascending: false });
 
       if (!error && data) {
         setUploadedPdfs(data);
       }
     };
 
-    if (registerNumber) {
-      fetchUploadedPdfs();
-    }
-  }, [registerNumber]);
+    fetchUploadedPdfs();
+  }, []);
 
   // Handle PDF upload
   const handlePdfUpload = async (event) => {
@@ -57,51 +59,41 @@ function StudentNotes({ theme: propTheme }) {
       return;
     }
 
+    if (!year || !subject || !lesson) {
+      alert("Please select year, subject and lesson before uploading");
+      return;
+    }
+
     setUploading(true);
 
     try {
-      // Upload file to Supabase Storage
-      const fileName = `${registerNumber}_${Date.now()}_${file.name}`;
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from("student-pdfs")
-        .upload(fileName, file);
-
-      if (uploadError) {
-        console.error("Upload error:", uploadError);
-        alert("Failed to upload file. Storage bucket may not be configured.");
-        setUploading(false);
-        return;
-      }
-
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from("student-pdfs")
-        .getPublicUrl(fileName);
-
-      // Save metadata to database
+      // Save metadata to database with correct column names
       const { error: dbError } = await supabase
-        .from("student_uploads")
+        .from("resources")
         .insert({
-          register_number: registerNumber,
-          file_name: file.name,
-          file_url: publicUrl,
+          title: file.name,
+          file_url: `https://placeholder.com/${file.name}`,
           department: department,
           year: year,
           subject: subject,
           lesson: lesson,
+          type: 'student_note',
         });
 
       if (dbError) {
         console.error("Database error:", dbError);
-        alert("Failed to save file info to database");
+        alert("Failed to save file info to database: " + dbError.message);
       } else {
-        alert("PDF uploaded successfully!");
+        alert("PDF metadata saved successfully!");
         // Refresh the list
         const { data } = await supabase
-          .from("student_uploads")
+          .from("resources")
           .select("*")
-          .eq("register_number", registerNumber)
-          .order("created_at", { ascending: false });
+          .eq("department", department)
+          .eq("year", year)
+          .eq("subject", subject)
+          .eq("lesson", lesson)
+          .order("upload_date", { ascending: false });
         setUploadedPdfs(data || []);
         setShowUploadModal(false);
       }
@@ -113,21 +105,13 @@ function StudentNotes({ theme: propTheme }) {
     setUploading(false);
   };
 
-  const handleDeletePdf = async (id, fileUrl) => {
+  const handleDeletePdf = async (id) => {
     if (!confirm("Are you sure you want to delete this PDF?")) return;
 
     try {
-      // Extract file name from URL
-      const fileName = fileUrl.split("/").pop();
-
-      // Delete from storage
-      await supabase.storage
-        .from("student-pdfs")
-        .remove([fileName]);
-
-      // Delete from database
+      // Delete from database only (no storage bucket)
       await supabase
-        .from("student_uploads")
+        .from("resources")
         .delete()
         .eq("id", id);
 
@@ -138,6 +122,36 @@ function StudentNotes({ theme: propTheme }) {
       console.error("Delete error:", error);
       alert("Failed to delete PDF");
     }
+  };
+
+  // Generate AI summary for a PDF
+  const handleGenerateSummary = async (pdf) => {
+    setSelectedPdf(pdf);
+    setLoadingSummary(true);
+    setAiSummary(null);
+
+    try {
+      const response = await fetch("/generate-ai", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ resource_id: pdf.id }),
+      });
+
+      const data = await response.json();
+
+      if (data.error) {
+        alert(data.error);
+      } else {
+        setAiSummary(data);
+      }
+    } catch (error) {
+      console.error("Error generating summary:", error);
+      alert("Failed to generate AI summary");
+    }
+
+    setLoadingSummary(false);
   };
 
   // Department-specific subjects and lessons
@@ -215,7 +229,7 @@ function StudentNotes({ theme: propTheme }) {
 
   const renderYearSelection = () => (
     <div style={styles.selectionSection}>
-      <h3 style={styles.stepTitle}>📅 Select Year</h3>
+      <h3 style={styles.stepTitle}><FaCalendar /> Select Year</h3>
       <div style={styles.buttonGrid}>
         {years.map((y) => (
           <button 
@@ -243,9 +257,9 @@ function StudentNotes({ theme: propTheme }) {
             onClick={() => resetSelection("year")} 
             style={styles.backButton}
           >
-            ← Back to Year
+            <FaChevronLeft /> Back to Year
           </button>
-          <h3 style={styles.stepTitle}>📚 Select Subject</h3>
+          <h3 style={styles.stepTitle}><FaBook /> Select Subject</h3>
           <div style={styles.buttonGrid}>
             {yearSubjects.map((s) => (
               <button 
@@ -275,7 +289,7 @@ function StudentNotes({ theme: propTheme }) {
             onClick={() => resetSelection("subject")} 
             style={styles.backButton}
           >
-            ← Back to Subjects
+            <FaChevronLeft /> Back to Subjects
           </button>
           <h3 style={styles.stepTitle}>📖 Select Lesson/Unit</h3>
           <div style={styles.buttonGrid}>
@@ -307,7 +321,7 @@ function StudentNotes({ theme: propTheme }) {
             onClick={() => resetSelection("lesson")} 
             style={styles.backButton}
           >
-            ← Back to Lessons
+            <FaChevronLeft /> Back to Lessons
           </button>
           <h3 style={styles.stepTitle}>📋 Available Notes for {subject}</h3>
           <div style={styles.notesGrid}>
@@ -319,22 +333,22 @@ function StudentNotes({ theme: propTheme }) {
               >
                 <h4 style={styles.noteTitle}>{note.title}</h4>
                 <div style={styles.noteMeta}>
-                  <span style={styles.rating}>⭐ {note.rating}</span>
-                  <span>📄 {note.pages} pages</span>
-                  <span>⬇ {note.downloads}</span>
+                  <span style={styles.rating}>★ {note.rating}</span>
+                  <span><FaFilePdf /> {note.pages} pages</span>
+                  <span>↓ {note.downloads}</span>
                 </div>
                 <div style={styles.noteActions}>
                   <button 
                     onClick={() => handleDownload(note)}
                     style={styles.downloadBtn}
                   >
-                    📥 Download
+                    ↓ Download
                   </button>
                   <button 
                     onClick={() => handleAIAssistant(note)}
                     style={styles.aiBtn}
                   >
-                    🤖 AI Assistant
+                    <FaRobot /> AI Assistant
                   </button>
                 </div>
               </div>
@@ -351,7 +365,7 @@ function StudentNotes({ theme: propTheme }) {
       <div style={styles.headerRow}>
         <div>
           <h2 style={{ ...styles.title, color: theme?.text || "#1a1a4a" }}>
-            📚 Student Notes
+            <FaBook /> Student Notes
           </h2>
           <p style={{ ...styles.subtitle, color: theme?.text || "#666" }}>
             Department: {department || "Computer Science"}
@@ -361,25 +375,25 @@ function StudentNotes({ theme: propTheme }) {
           onClick={() => setShowUploadModal(true)}
           style={styles.uploadButton}
         >
-          📤 Upload PDF
+          <FaUpload /> Upload PDF
         </button>
       </div>
 
       {/* Uploaded PDFs Section */}
       {uploadedPdfs.length > 0 && (
         <div style={styles.uploadedSection}>
-          <h3 style={styles.uploadedTitle}>📄 Your Uploaded PDFs</h3>
+          <h3 style={styles.uploadedTitle}><FaFilePdf /> Your Uploaded PDFs</h3>
           <div style={styles.uploadedGrid}>
             {uploadedPdfs.map((pdf) => (
               <div key={pdf.id} style={styles.uploadedCard} className="glass-card">
-                <div style={styles.pdfIcon}>📄</div>
+                <div style={styles.pdfIcon}><FaFilePdf /></div>
                 <div style={styles.pdfInfo}>
-                  <h4 style={styles.pdfTitle}>{pdf.file_name}</h4>
+                  <h4 style={styles.pdfTitle}>{pdf.title}</h4>
                   <p style={styles.pdfMeta}>
                     {pdf.subject} - {pdf.lesson}
                   </p>
                   <p style={styles.pdfDate}>
-                    {new Date(pdf.created_at).toLocaleDateString()}
+                    {new Date(pdf.upload_date).toLocaleDateString()}
                   </p>
                 </div>
                 <div style={styles.pdfActions}>
@@ -389,13 +403,19 @@ function StudentNotes({ theme: propTheme }) {
                     rel="noopener noreferrer"
                     style={styles.viewBtn}
                   >
-                    👁 View
+                    <FaEye /> View
                   </a>
                   <button 
-                    onClick={() => handleDeletePdf(pdf.id, pdf.file_url)}
+                    onClick={() => handleGenerateSummary(pdf)}
+                    style={styles.aiSummaryBtn}
+                  >
+                    <FaRobot /> AI Summary
+                  </button>
+                  <button 
+                    onClick={() => handleDeletePdf(pdf.id)}
                     style={styles.deleteBtn}
                   >
-                    🗑 Delete
+                    <FaTrash /> Delete
                   </button>
                 </div>
               </div>
@@ -404,11 +424,51 @@ function StudentNotes({ theme: propTheme }) {
         </div>
       )}
 
+      {/* AI Summary Display */}
+      {loadingSummary && (
+        <div style={styles.loadingContainer}>
+          <FaSpinner style={styles.spinnerIcon} />
+          <p style={styles.loadingText}>Generating AI Summary...</p>
+        </div>
+      )}
+
+      {aiSummary && !loadingSummary && (
+        <div style={styles.summaryContainer} className="glass-card">
+          <div style={styles.summaryHeader}>
+            <h3 style={styles.summaryTitle}><FaRobot /> AI Generated Summary</h3>
+            <button 
+              onClick={() => setAiSummary(null)} 
+              style={styles.closeSummaryBtn}
+            >
+              <FaTimes />
+            </button>
+          </div>
+          <div style={styles.summaryContent}>
+            {aiSummary.source === "stored" ? (
+              <>
+                <div style={styles.summarySection}>
+                  <h4 style={styles.sectionTitle}>📝 Summary</h4>
+                  <p style={styles.summaryText}>{aiSummary.summary}</p>
+                </div>
+                <div style={styles.summarySection}>
+                  <h4 style={styles.sectionTitle}>❓ Important Questions</h4>
+                  <p style={styles.summaryText}>{aiSummary.important_questions}</p>
+                </div>
+              </>
+            ) : (
+              <div style={styles.summarySection}>
+                <pre style={styles.aiOutput}>{aiSummary.result}</pre>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Upload Modal */}
       {showUploadModal && (
         <div style={styles.modalOverlay} onClick={() => setShowUploadModal(false)}>
           <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-            <h3 style={styles.modalTitle}>📤 Upload PDF</h3>
+            <h3 style={styles.modalTitle}><FaUpload /> Upload PDF</h3>
             
             <div style={styles.uploadForm}>
               <div style={styles.formGroup}>
@@ -792,6 +852,93 @@ const styles = {
     fontSize: "14px",
     fontWeight: "500",
     cursor: "pointer",
+  },
+  // AI Summary styles
+  aiSummaryBtn: {
+    padding: "8px 12px",
+    background: "linear-gradient(135deg, #4a5fff 0%, #3a4fdf 100%)",
+    border: "none",
+    borderRadius: "6px",
+    color: "white",
+    fontSize: "12px",
+    fontWeight: "500",
+    cursor: "pointer",
+  },
+  loadingContainer: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "40px",
+    gap: "15px",
+  },
+  spinnerIcon: {
+    fontSize: "40px",
+    color: "#4a5fff",
+    animation: "spin 1s linear infinite",
+  },
+  loadingText: {
+    fontSize: "14px",
+    color: "#666",
+    margin: 0,
+  },
+  summaryContainer: {
+    marginTop: "20px",
+    padding: "25px",
+    maxHeight: "500px",
+    overflowY: "auto",
+  },
+  summaryHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "20px",
+  },
+  summaryTitle: {
+    fontSize: "18px",
+    fontWeight: "600",
+    color: "#1a1a4a",
+    margin: 0,
+  },
+  closeSummaryBtn: {
+    padding: "8px 12px",
+    background: "rgba(100, 120, 255, 0.1)",
+    border: "none",
+    borderRadius: "6px",
+    color: "#1a1a4a",
+    fontSize: "14px",
+    cursor: "pointer",
+  },
+  summaryContent: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "20px",
+  },
+  summarySection: {
+    padding: "15px",
+    background: "rgba(255, 255, 255, 0.5)",
+    borderRadius: "10px",
+  },
+  sectionTitle: {
+    fontSize: "15px",
+    fontWeight: "600",
+    color: "#1a1a4a",
+    marginBottom: "10px",
+  },
+  summaryText: {
+    fontSize: "14px",
+    color: "#666",
+    lineHeight: "1.6",
+    margin: 0,
+    whiteSpace: "pre-wrap",
+  },
+  aiOutput: {
+    fontSize: "14px",
+    color: "#333",
+    lineHeight: "1.6",
+    margin: 0,
+    whiteSpace: "pre-wrap",
+    fontFamily: "inherit",
   },
 };
 
